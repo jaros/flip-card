@@ -32,6 +32,9 @@ A modern, interactive flashcard application built with React.js, TypeScript, and
 
 ## 🚀 Getting Started
 
+### Demo
+https://courageous-cendol-54707b.netlify.app
+
 ### Prerequisites
 - Node.js (version 14 or higher)
 - npm or yarn
