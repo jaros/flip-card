@@ -29,38 +29,83 @@ const CardFlow: React.FC<CardFlowProps> = ({ words }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [shuffledWords, setShuffledWords] = useState(words);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const currentWord = shuffledWords[currentIndex];
   const progress = ((currentIndex + 1) / shuffledWords.length) * 100;
 
   const handleNext = () => {
     if (currentIndex < shuffledWords.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsFlipped(false);
+      if (isFlipped) {
+        // First flip back to front, then change card after transition
+        setIsTransitioning(true);
+        setIsFlipped(false);
+        setTimeout(() => {
+          setCurrentIndex(currentIndex + 1);
+          setIsTransitioning(false);
+        }, 300); // Half the transition time for smoother experience
+      } else {
+        // Card is already showing front, change immediately
+        setCurrentIndex(currentIndex + 1);
+      }
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setIsFlipped(false);
+      if (isFlipped) {
+        // First flip back to front, then change card after transition
+        setIsTransitioning(true);
+        setIsFlipped(false);
+        setTimeout(() => {
+          setCurrentIndex(currentIndex - 1);
+          setIsTransitioning(false);
+        }, 300); // Half the transition time for smoother experience
+      } else {
+        // Card is already showing front, change immediately
+        setCurrentIndex(currentIndex - 1);
+      }
     }
   };
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    if (!isTransitioning) {
+      setIsFlipped(!isFlipped);
+    }
   };
 
   const handleShuffle = () => {
-    const shuffled = [...shuffledWords].sort(() => Math.random() - 0.5);
-    setShuffledWords(shuffled);
-    setCurrentIndex(0);
-    setIsFlipped(false);
+    if (isFlipped) {
+      // First flip back to front, then shuffle after transition
+      setIsTransitioning(true);
+      setIsFlipped(false);
+      setTimeout(() => {
+        const shuffled = [...shuffledWords].sort(() => Math.random() - 0.5);
+        setShuffledWords(shuffled);
+        setCurrentIndex(0);
+        setIsTransitioning(false);
+      }, 300);
+    } else {
+      // Card is already showing front, shuffle immediately
+      const shuffled = [...shuffledWords].sort(() => Math.random() - 0.5);
+      setShuffledWords(shuffled);
+      setCurrentIndex(0);
+    }
   };
 
   const handleRestart = () => {
-    setCurrentIndex(0);
-    setIsFlipped(false);
+    if (isFlipped) {
+      // First flip back to front, then restart after transition
+      setIsTransitioning(true);
+      setIsFlipped(false);
+      setTimeout(() => {
+        setCurrentIndex(0);
+        setIsTransitioning(false);
+      }, 300);
+    } else {
+      // Card is already showing front, restart immediately
+      setCurrentIndex(0);
+    }
   };
 
   // Add keyboard navigation
@@ -114,7 +159,16 @@ const CardFlow: React.FC<CardFlowProps> = ({ words }) => {
       </Paper>
 
       {/* Main Card */}
-      <Box sx={{ mb: 4, width: '100%', maxWidth: 500 }}>
+      <Box 
+        sx={{ 
+          mb: 4, 
+          width: '100%', 
+          maxWidth: 500,
+          opacity: isTransitioning ? 0.7 : 1,
+          transition: 'opacity 0.2s ease-in-out',
+          pointerEvents: isTransitioning ? 'none' : 'auto'
+        }}
+      >
         <Flashcard
           word={currentWord}
           isFlipped={isFlipped}
@@ -133,7 +187,7 @@ const CardFlow: React.FC<CardFlowProps> = ({ words }) => {
       >
         <IconButton
           onClick={handlePrevious}
-          disabled={currentIndex === 0}
+          disabled={currentIndex === 0 || isTransitioning}
           size="large"
           sx={{
             backgroundColor: theme.palette.background.paper,
@@ -150,12 +204,12 @@ const CardFlow: React.FC<CardFlowProps> = ({ words }) => {
           color="text.secondary"
           sx={{ mx: 2, minWidth: 100, textAlign: 'center' }}
         >
-          {currentIndex + 1} / {shuffledWords.length}
+          {isTransitioning ? '...' : `${currentIndex + 1} / ${shuffledWords.length}`}
         </Typography>
 
         <IconButton
           onClick={handleNext}
-          disabled={currentIndex === shuffledWords.length - 1}
+          disabled={currentIndex === shuffledWords.length - 1 || isTransitioning}
           size="large"
           sx={{
             backgroundColor: theme.palette.background.paper,
@@ -174,6 +228,7 @@ const CardFlow: React.FC<CardFlowProps> = ({ words }) => {
           color="secondary"
           aria-label="shuffle"
           onClick={handleShuffle}
+          disabled={isTransitioning}
           size="medium"
         >
           <Shuffle />
@@ -182,6 +237,7 @@ const CardFlow: React.FC<CardFlowProps> = ({ words }) => {
           color="primary"
           aria-label="restart"
           onClick={handleRestart}
+          disabled={isTransitioning}
           size="medium"
         >
           <Refresh />
